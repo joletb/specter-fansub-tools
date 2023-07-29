@@ -17,6 +17,7 @@ def str2s(hmrstr):
 
 parser = argparse.ArgumentParser(description='graph data from libass_profiler_graph (assytics)')
 parser.add_argument('-i', '--inputcsv',default='statistics.csv', required=False, help='name of the CSV file').completer = argcomplete.completers.FilesCompleter(['csv'], directories=False)
+parser.add_argument('-f', '--fps',default=23.976, type=float, required=False, help='video FPS to determine frame time')
 args = parser.parse_args()
 
 frame_stat_names = ['time','total_image_size', 'largest_image_size','image_count','time_benchmark']
@@ -31,7 +32,7 @@ frame_stat_y_axis_labels = [
     'bytes',
     'bytes',
     'counts',
-    'seconds',
+    'milliseconds',
 ]
 
 def Base10BytesFormatter(max_y):
@@ -65,6 +66,11 @@ def graph_libass_stats(samples,title):
             subplot.yaxis.set_major_formatter(Base10BytesFormatter(max_y))
         else:
             subplot.set(xlabel=None, ylabel=y_label)
+        if graph_label == "frame render time":
+            subplot.axhline(y = 1000 / args.fps, color='r', linestyle = 'dashed')
+            subplot.axhline(y = (1000 / args.fps) / 2, color='w', linestyle = 'dashed')
+        else:
+            pass
         subplot.set_xlim([time_domain[0], time_domain[-1]])
         subplot.set_ylim([0, max_y])
         subplot.plot(time_domain,float_data)
@@ -78,6 +84,7 @@ with open(args.inputcsv, newline='') as csvfile:
     title = next(reader)[0]
     next(reader)
     for row in reader:
+        row[4] = float(row[4]) * 1000
         print(row)
         data = Frame_Statistics(*row)
         data_list.append(data)
